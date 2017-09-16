@@ -1,0 +1,8 @@
+name: muv_compiler
+description: A standalone compiler for the Muv language.
+dependencies:
+  build_runner: ^0.5.0
+  muv_builder:
+    path: ../muv_builder
+executables:
+  muv: main

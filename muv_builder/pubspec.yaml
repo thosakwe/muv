@@ -1,0 +1,6 @@
+name: muv_builder
+description: package:build support for Muv compilation.
+dependencies:
+  build: ^0.10.0
+  muv:
+    path: ../muv
