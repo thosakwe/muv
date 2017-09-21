@@ -8,10 +8,16 @@ class MuvJavaScriptBuilder implements Builder {
 
   const MuvJavaScriptBuilder({this.generatedExtension: '.js'});
 
+  String _stripFirst(Uri uri) {
+    return uri.pathSegments.length == 1
+        ? uri.path
+        : uri.pathSegments.skip(1).join('/');
+  }
+
   @override
   Map<String, List<String>> get buildExtensions {
     return {
-      '.muv': [generatedExtension]
+      '.muv': [generatedExtension, '$generatedExtension.map']
     };
   }
 
@@ -27,7 +33,21 @@ class MuvJavaScriptBuilder implements Builder {
       () => new MuvJavaScriptCompiler(),
       print,
     );
+
+    var mapExtension =
+        buildStep.inputId.changeExtension('$generatedExtension.map');
+    var mapPath = _stripFirst(mapExtension.uri);
+
     buildStep.writeAsString(
-        buildStep.inputId.changeExtension(generatedExtension), result);
+      buildStep.inputId.changeExtension(generatedExtension),
+      result.result + '\n//#sourceMappingURL=$mapPath',
+    );
+
+    buildStep.writeAsString(
+      mapExtension,
+      result.sourceMapBuilder.toJson(
+        _stripFirst(buildStep.inputId.uri),
+      ),
+    );
   }
 }

@@ -5,6 +5,7 @@ const Map<TokenType, PrefixParselet> prefixParselets = const {
   TokenType.number: const NumberParselet(),
   TokenType.hex: const HexParselet(),
   TokenType.string: const StringParselet(),
+  TokenType.lCurly: const ObjectParselet(),
   TokenType.lBracket: const ArrayParselet(),
   TokenType.id: const IdentifierParselet(),
 };
@@ -58,6 +59,31 @@ class ArrayParselet implements PrefixParselet {
   }
 }
 
+class ObjectParselet implements PrefixParselet {
+  const ObjectParselet();
+
+  @override
+  Expression parse(Parser parser, Token token) {
+    var members = <ObjectLiteralMember>[];
+    var member = parser.parseObjectLiteralMember();
+
+    while (member != null) {
+      members.add(member);
+      if (!parser.next(TokenType.comma)) break;
+      parser.skipExtraneous(TokenType.comma);
+      member = parser.parseObjectLiteralMember();
+    }
+
+    if (!parser.next(TokenType.rCurly)) {
+      var lastSpan = members.isEmpty ? token.span : members.last.span;
+      parser.errors.add(new MuvError(MuvErrorSeverity.ERROR, 'Missing "}" in object literal.', lastSpan));
+      return null;
+    }
+
+    return new ObjectLiteral(token, members, parser.current);
+  }
+}
+
 class IdentifierParselet implements PrefixParselet {
   const IdentifierParselet();
 
@@ -74,8 +100,9 @@ class BlockFunctionParselet implements PrefixParselet {
     var parameterList = parser.parseParameterList();
 
     if (parameterList == null) {
+      var functionName = name == null ? 'function' : 'function "${name.name}"';
       parser.errors.add(new MuvError(MuvErrorSeverity.ERROR,
-          'Missing parameter list.', name?.span ?? token.span));
+          'Missing parameter list in $functionName.', name?.span ?? token.span));
       return null;
     }
 
@@ -107,6 +134,8 @@ class BlockFunctionParselet implements PrefixParselet {
       parser.skipExtraneous(TokenType.semi);
       statement = parser.parseStatement();
     }
+
+    parser.skipExtraneous(TokenType.semi);
 
     if (!parser.next(TokenType.rCurly)) {
       var lastSpan = statements.isEmpty ? null : statements.last.span;

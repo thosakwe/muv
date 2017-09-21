@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:source_maps/source_maps.dart';
 import 'package:symbol_table/symbol_table.dart';
 import '../analysis/analysis.dart';
 import '../text/text.dart';
@@ -25,12 +26,12 @@ class _MemoryMuvFile implements MuvFile {
 }
 
 /// Applies tree-shaking and transforms to a [sourceFile], and then compiles into the target format.
-Future<T> compile<T>(
+Future<MuvCompilationResult<T>> compile<T>(
     MuvFile sourceFile, MuvFileSystem fileSystem, MuvCompiler<T> compilerFactory(), void onError(MuvError error)) async {
   // TODO: Tree-shaking, other transforms...
   var scope = new SymbolTable<MuvObject>();
   var contents = await sourceFile.readAsString();
-  var ctx = new MuvCompilationContext();
+  var ctx = new MuvCompilationContext(sourceFile.uri);
   var scanner = new Scanner(contents, sourceFile.uri)..scan();
   scanner.errors.forEach(onError);
   var parser = new Parser(scanner);
@@ -39,5 +40,12 @@ Future<T> compile<T>(
   var c = compilerFactory();
   var result = c.compile(program, ctx, scope);
   c.errors.forEach(onError);
-  return result;
+  return new MuvCompilationResult<T>(result, ctx.sourceMapBuilder);
+}
+
+class MuvCompilationResult<T> {
+  final T result;
+  final SourceMapBuilder sourceMapBuilder;
+
+  MuvCompilationResult(this.result, this.sourceMapBuilder);
 }

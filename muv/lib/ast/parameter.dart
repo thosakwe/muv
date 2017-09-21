@@ -22,12 +22,14 @@ class ParameterList extends AstNode {
   }
 }
 
-class Parameter extends AstNode {
+abstract class Parameter extends AstNode {}
+
+class SimpleParameter extends Parameter {
   final Identifier name;
   final Token colon;
   final TypeNode type;
 
-  Parameter(this.name, this.colon, this.type);
+  SimpleParameter(this.name, this.colon, this.type);
 
   @override
   List<String> get comments => name.comments;
@@ -36,5 +38,22 @@ class Parameter extends AstNode {
   FileSpan get span {
     if (colon == null) return name.span;
     return name.span.expand(colon.span).expand(type.span);
+  }
+}
+
+class DestructuringParameter implements Parameter {
+  final Token lCurly, rCurly;
+  final List<SimpleParameter> properties;
+
+  DestructuringParameter(this.lCurly, this.properties, this.rCurly);
+
+  @override
+  List<String> get comments => lCurly.comments;
+
+  @override
+  FileSpan get span {
+    return properties
+        .fold<FileSpan>(lCurly.span, (out, i) => out.expand(i.span))
+        .expand(rCurly.span);
   }
 }

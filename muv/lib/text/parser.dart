@@ -50,8 +50,20 @@ class Parser {
     var topLevelDeclarations = <TopLevel>[];
     var topLevel = parseTopLevel();
 
-    while (topLevel != null) {
-      topLevelDeclarations.add(topLevel);
+    while (_index < scanner.tokens.length) {
+      if (topLevel != null)
+        topLevelDeclarations.add(topLevel);
+      else {
+        var token = scanner.tokens[_index++];
+        if (token.type != TokenType.semi) {
+          errors.add(new MuvError(
+              MuvErrorSeverity.WARNING,
+              'Extraneous token "${token.span
+                  .text}" will be ignored. There is a syntax error somewhere...',
+              token.span));
+        }
+      }
+
       topLevel = parseTopLevel();
     }
 
@@ -117,9 +129,15 @@ class Parser {
 
   ExpressionStatement parseExpressionStatement() {
     var expression = parseExpression(0);
-    return expression != null
-        ? new ExpressionStatement(expression, maybe(TokenType.semi))
-        : null;
+    if (expression == null)
+      return null;
+    else {
+      var semi = maybe(TokenType.semi);
+      skipExtraneous(TokenType.semi);
+      return expression != null
+          ? new ExpressionStatement(expression, semi)
+          : null;
+    }
   }
 
   ParameterList parseParameterList() {
@@ -138,15 +156,41 @@ class Parser {
     if (!next(TokenType.rParen)) {
       var lastSpan = parameters.isEmpty ? null : parameters.last.span;
       lastSpan ??= lParen.span;
-      errors
-          .add(new MuvError(MuvErrorSeverity.ERROR, 'Missing ")".', lastSpan));
+      errors.add(new MuvError(MuvErrorSeverity.ERROR,
+          'Missing ")" after parameter list.', lastSpan));
       return null;
     }
 
     return new ParameterList(lParen, parameters, _current);
   }
 
-  Parameter parseParameter() {
+  Parameter parseParameter() =>
+      parseDestructuringParameter() ?? parseSimpleParameter();
+
+  DestructuringParameter parseDestructuringParameter() {
+    if (!next(TokenType.lCurly)) return null;
+    var lCurly = _current;
+    var parameters = <SimpleParameter>[];
+    var parameter = parseSimpleParameter();
+
+    while (parameter != null) {
+      parameters.add(parameter);
+      if (!next(TokenType.comma)) break;
+      skipExtraneous(TokenType.comma);
+      parameter = parseSimpleParameter();
+    }
+
+    if (!next(TokenType.rCurly)) {
+      var lastSpan = parameters.isEmpty ? lCurly.span : parameters.last.span;
+      errors.add(new MuvError(MuvErrorSeverity.ERROR,
+          'Missing "}" in destructuring parameter.', lastSpan));
+      return null;
+    }
+
+    return new DestructuringParameter(lCurly, parameters, _current);
+  }
+
+  SimpleParameter parseSimpleParameter() {
     var name = parseIdentifier();
     if (name == null) return null;
 
@@ -165,7 +209,7 @@ class Parser {
       }
     }
 
-    return new Parameter(name, colon, type);
+    return new SimpleParameter(name, colon, type);
   }
 
   // TODO: Other types?
@@ -174,6 +218,40 @@ class Parser {
   SimpleType parseSimpleType() {
     var name = parseIdentifier();
     return name != null ? new SimpleType(name) : null;
+  }
+
+  ObjectLiteralMember parseObjectLiteralMember() =>
+      parseDestructuringMember() ?? parseKeyValuePair();
+
+  DestructuringMember parseDestructuringMember() {
+    if (!next(TokenType.ellipsis)) return null;
+    var ellipsis = _current;
+    var expression = parseExpression(0);
+
+    if (expression == null) {
+      errors.add(new MuvError(
+          MuvErrorSeverity.ERROR,
+          'Expected value after "..." in destructuring expression.',
+          ellipsis.span));
+      return null;
+    }
+
+    return new DestructuringMember(ellipsis, expression);
+  }
+
+  KeyValuePair parseKeyValuePair() {
+    var key = parseIdentifier();
+    if (key == null) return null;
+    if (!next(TokenType.colon)) return new KeyValuePair(key, null, null);
+    var colon = _current, value = parseExpression(0);
+
+    if (value == null) {
+      errors.add(new MuvError(MuvErrorSeverity.ERROR,
+          'Expected value for object key "${key.name}".', colon.span));
+      return null;
+    }
+
+    return new KeyValuePair(key, colon, value);
   }
 
   Identifier parseIdentifier() =>

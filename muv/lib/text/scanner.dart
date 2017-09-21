@@ -16,6 +16,7 @@ final Map<Pattern, TokenType> _patterns = {
   ':': TokenType.colon,
   ',': TokenType.comma,
   '.': TokenType.dot,
+  '...': TokenType.ellipsis,
   '=': TokenType.equals,
   '[': TokenType.lBracket,
   ']': TokenType.rBracket,

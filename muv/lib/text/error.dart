@@ -20,8 +20,7 @@ class MuvError extends Error {
 
   @override
   String toString() {
-    var location =
-        '${span.sourceUrl}, line ${span.start.line} pos ${span.start.column}';
+    var location = span.start.toolString;
     return severityToString(severity) +
         ': $location: $message \n' +
         span.highlight(color: true);

@@ -2,9 +2,11 @@ name: muv
 description: A radical language designed for building SPA's in record time.
 dependencies:
   args: ^0.13.4
-  console: ^2.0.0
-  file: ^2.0.0
-  indenting_buffer: ^1.0.0
+  code_buffer: ^1.0.0
+  source_maps: ^0.10.0
   source_span: ^1.0.0
   string_scanner: ^1.0.0
   symbol_table: ^1.0.0
+dependency_overrides:
+  code_buffer:
+    path: ../../code_buffer

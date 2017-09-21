@@ -6,6 +6,7 @@ enum TokenType {
   colon,
   comma,
   dot,
+  ellipsis,
   equals,
   semi,
   lBracket,

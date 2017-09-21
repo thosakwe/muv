@@ -1,0 +1,6 @@
+// Destructuring parameters!!!
+function printTodo({text:string, completed:boolean}):void {
+  console.log(text, ":", completed);
+}
+
+printTodo({text: 'Clean your room!', completed: false});

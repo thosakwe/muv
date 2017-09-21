@@ -1,14 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="WEB_MODULE" version="4">
   <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$/../code_buffer">
+      <excludeFolder url="file://$MODULE_DIR$/../code_buffer/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/../code_buffer/build" />
+      <excludeFolder url="file://$MODULE_DIR$/../code_buffer/packages" />
+      <excludeFolder url="file://$MODULE_DIR$/../code_buffer/test/packages" />
+    </content>
     <content url="file://$MODULE_DIR$/example">
       <excludeFolder url="file://$MODULE_DIR$/example/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/example/build" />
       <excludeFolder url="file://$MODULE_DIR$/example/packages" />
       <excludeFolder url="file://$MODULE_DIR$/example/tool/packages" />
     </content>
-    <content url="file://$MODULE_DIR$/muv" />
-    <content url="file://$MODULE_DIR$/muv_builder" />
+    <content url="file://$MODULE_DIR$/muv">
+      <excludeFolder url="file://$MODULE_DIR$/muv/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/muv/build" />
+      <excludeFolder url="file://$MODULE_DIR$/muv/packages" />
+    </content>
+    <content url="file://$MODULE_DIR$/muv_builder">
+      <excludeFolder url="file://$MODULE_DIR$/muv_builder/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/muv_builder/build" />
+      <excludeFolder url="file://$MODULE_DIR$/muv_builder/packages" />
+    </content>
     <content url="file://$MODULE_DIR$/muv_compiler">
       <excludeFolder url="file://$MODULE_DIR$/muv_compiler/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/muv_compiler/bin/packages" />

@@ -1,4 +1,4 @@
-import 'package:indenting_buffer/indenting_buffer.dart';
+import 'package:code_buffer/code_buffer.dart';
 import 'package:symbol_table/symbol_table.dart';
 import '../ast/ast.dart';
 import '../analysis/analysis.dart';
@@ -11,7 +11,7 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
   @override
   String compile(Program program, MuvCompilationContext ctx,
       SymbolTable<MuvObject> scope) {
-    var buf = new IndentingBuffer();
+    var buf = new CodeBuffer(sourceUrl: ctx.entryPoint);
     buf
       ..writeln('// Generated via Muv')
       ..writeln('((function() {')
@@ -25,22 +25,19 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
   }
 
   void compileTopLevel(TopLevel declaration, MuvCompilationContext ctx,
-      SymbolTable<MuvObject> scope, IndentingBuffer buf) {
+      SymbolTable<MuvObject> scope, CodeBuffer buf) {
     // TODO: Other top-level
     if (declaration is TopLevelStatement)
       compileTopLevelStatement(declaration, ctx, scope, buf);
   }
 
-  void compileTopLevelStatement(
-      TopLevelStatement statement,
-      MuvCompilationContext ctx,
-      SymbolTable<MuvObject> scope,
-      IndentingBuffer buf) {
+  void compileTopLevelStatement(TopLevelStatement statement,
+      MuvCompilationContext ctx, SymbolTable<MuvObject> scope, CodeBuffer buf) {
     compileStatement(statement.statement, ctx, scope, buf);
   }
 
   void compileStatement(Statement statement, MuvCompilationContext ctx,
-      SymbolTable<MuvObject> scope, IndentingBuffer buf) {
+      SymbolTable<MuvObject> scope, CodeBuffer buf) {
     // TODO: Compile other statements
     if (statement is VariableDeclarationStatement)
       compileVariableDeclarationStatement(statement, ctx, scope, buf);
@@ -53,26 +50,27 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
       VariableDeclarationStatement statement,
       MuvCompilationContext ctx,
       SymbolTable<MuvObject> scope,
-      IndentingBuffer buf) {
+      CodeBuffer buf) {
     // TODO: Declare variables within scope
     // TODO: handle "exists within scope"
     for (var decl in statement.variableDeclarations) {
       var expr = compileExpression(decl.expression, ctx, scope, buf);
       buf.writeln('var ${decl.name.name} = $expr;');
+      //ctx.sourceMapBuilder.addSpan(decl.span, buf.lastLine.span);
     }
   }
 
-  void compileExpressionStatement(
-      ExpressionStatement statement,
-      MuvCompilationContext ctx,
-      SymbolTable<MuvObject> scope,
-      IndentingBuffer buf) {
+  void compileExpressionStatement(ExpressionStatement statement,
+      MuvCompilationContext ctx, SymbolTable<MuvObject> scope, CodeBuffer buf) {
     var expression = compileExpression(statement.expression, ctx, scope, buf);
-    if (statement.expression is! BlockFunction) buf.writeln('$expression;');
+    if (statement.expression is! BlockFunction) {
+      buf.writeln('$expression;');
+      //ctx.sourceMapBuilder.addSpan(statement.span, buf.lastLine.span);
+    }
   }
 
   String compileExpression(Expression expression, MuvCompilationContext ctx,
-      SymbolTable<MuvObject> scope, IndentingBuffer buf) {
+      SymbolTable<MuvObject> scope, CodeBuffer buf) {
     // Literals should be virtually the same in JavaScript
     if (expression is Literal) return expression.span.text;
 
@@ -83,10 +81,23 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
     if (expression is MemberExpression)
       return compileMemberExpression(expression, ctx, scope, buf);
 
+    if (expression is ObjectLiteral)
+      return compileObjectLiteral(expression, ctx, scope, buf);
+
     if (expression is Array) return compileArray(expression, ctx, scope, buf);
 
-    if (expression is BlockFunction)
-      return compileBlockFunction(expression, ctx, scope, buf);
+    if (expression is BlockFunction) {
+      var result = compileBlockFunction(expression, ctx, scope, buf);
+
+      if (result is! CodeBuffer) {
+        buf.writeln();
+        return result;
+      }
+
+      (result as CodeBuffer).copyInto(buf);
+      //ctx.sourceMapBuilder.addSpan(expression.span, buf.lastLine.span);
+      return '';
+    }
 
     // Fallback to error
     var msg =
@@ -96,70 +107,119 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
   }
 
   String compileCall(Call call, MuvCompilationContext ctx,
-      SymbolTable<MuvObject> scope, IndentingBuffer buf) {
+      SymbolTable<MuvObject> scope, CodeBuffer buf) {
     var target = compileExpression(call.target, ctx, scope, buf);
     var arguments =
         call.arguments.map((a) => compileExpression(a, ctx, scope, buf));
     return '$target(' + arguments.join(', ') + ')';
   }
 
-  String compileMemberExpression(
-      MemberExpression memberExpression,
-      MuvCompilationContext ctx,
-      SymbolTable<MuvObject> scope,
-      IndentingBuffer buf) {
+  String compileMemberExpression(MemberExpression memberExpression,
+      MuvCompilationContext ctx, SymbolTable<MuvObject> scope, CodeBuffer buf) {
     // TODO: Check if name exists
     var left = compileExpression(memberExpression.expression, ctx, scope, buf);
     return '$left.${memberExpression.name.name}';
   }
 
+  String compileObjectLiteral(ObjectLiteral objectLiteral,
+      MuvCompilationContext ctx, SymbolTable<MuvObject> scope, CodeBuffer buf) {
+    if (!objectLiteral.members.any((m) => m is DestructuringMember)) {
+      var b = new StringBuffer('{');
+      int i = 0;
+
+      for (KeyValuePair member in objectLiteral.members) {
+        if (i++ > 0) b.write(', ');
+
+        if (member.value == null) {
+          b.write('${member.key.name}: ${member.key.name}');
+        } else {
+          var value = compileExpression(member.value, ctx, scope, buf);
+          b.write('${member.key.name}: $value');
+        }
+      }
+
+      b.write('}');
+      return b.toString();
+    }
+
+    var keys = <String>['{}'];
+
+    for (var member in objectLiteral.members) {
+      if (member is DestructuringMember) {
+        keys.add(compileExpression(member.expression, ctx, scope, buf));
+      } else if (member is KeyValuePair) {
+        if (member.value == null) {
+          keys.add('{${member.key.name}: ${member.key.name}}');
+        } else {
+          var value = compileExpression(member.value, ctx, scope, buf);
+          keys.add('{${member.key.name}: $value}');
+        }
+      }
+    }
+
+    return 'Object.assign(' + keys.join(', ') + ')';
+  }
+
   String compileArray(Array array, MuvCompilationContext ctx,
-      SymbolTable<MuvObject> scope, IndentingBuffer buf) {
+      SymbolTable<MuvObject> scope, CodeBuffer buf) {
     var items = array.items.map((a) => compileExpression(a, ctx, scope, buf));
     return '[' + items.join(', ') + ']';
   }
 
-  String compileBlockFunction(
-      BlockFunction blockFunction,
-      MuvCompilationContext ctx,
-      SymbolTable<MuvObject> scope,
-      IndentingBuffer buf) {
+  compileBlockFunction(BlockFunction blockFunction, MuvCompilationContext ctx,
+      SymbolTable<MuvObject> scope, CodeBuffer buf) {
     // TODO: Define within scope as a function object
-    void writeFunction(IndentingBuffer b) {
-      b.write('function');
+    var b = new CodeBuffer();
+    b.write('function');
 
-      if (blockFunction.name != null)
-        b.withoutIndent(' ${blockFunction.name.name}');
+    if (blockFunction.name != null) b.write(' ${blockFunction.name.name}');
 
-      b.withoutIndent('(');
+    b.write('(');
 
-      for (int i = 0; i < blockFunction.parameterList.parameters.length; i++) {
-        if (i > 0) b.withoutIndent(', ');
-        var parameter = blockFunction.parameterList.parameters[i];
-        b.withoutIndent(parameter.name.name);
+    int i = 0;
+
+    for (var parameter in blockFunction.parameterList.parameters) {
+      if (i > 0) b.write(', ');
+      if (parameter is SimpleParameter)
+        b.write(parameter.name.name);
+      else
+        b.write('arg$i');
+      i++;
+    }
+
+    b
+      ..writeln(') {')
+      ..indent();
+
+    i = 0;
+    for (var parameter in blockFunction.parameterList.parameters) {
+      if (parameter is DestructuringParameter) {
+        var argLiteral = 'arg$i';
+
+        for (var property in parameter.properties) {
+          b.writeln(
+              'var ${property.name.name} = $argLiteral.${property.name.name};');
+        }
       }
 
-      b
-        ..withoutIndent(') {\n')
-        ..indent();
-
-      blockFunction.statements
-          .forEach((s) => compileStatement(s, ctx, scope, b));
-
-      b
-        ..outdent()
-        ..writeln('}');
+      i++;
     }
+
+    blockFunction.statements.forEach((s) => compileStatement(s, ctx, scope, b));
+
+    b
+      ..outdent()
+      ..writeln('}');
 
     if (blockFunction.name == null) {
       // Return an anonymous function
-      var anonymous = new IndentingBuffer()..write('(');
-      writeFunction(anonymous);
-      anonymous.withoutIndent(')');
-      return anonymous.toString();
+      var anonymous = new CodeBuffer()..write('(');
+      b.copyInto(anonymous);
+      anonymous.write(')');
+      return anonymous;
     } else {
       // Write a block function, and return its name.
-      writeFunction(buf);
+      b.copyInto(buf);
       return blockFunction.name.name;
     }
   }
