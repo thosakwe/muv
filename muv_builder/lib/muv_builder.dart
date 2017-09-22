@@ -19,8 +19,10 @@ class MuvJavaScriptBuilder implements Builder {
 
   @override
   Map<String, List<String>> get buildExtensions {
+    var ext = [generatedExtension, '$generatedExtension.map'];
     return {
-      '.muv': [generatedExtension, '$generatedExtension.map']
+      '.muv': ext,
+      '.muv.js': ext,
     };
   }
 

@@ -19,6 +19,9 @@ final Map<Pattern, TokenType> _patterns = {
   '.': TokenType.dot,
   '...': TokenType.ellipsis,
   '=': TokenType.equals,
+  '-': TokenType.minus,
+  '%': TokenType.percent,
+  '+': TokenType.plus,
   '[': TokenType.lBracket,
   ']': TokenType.rBracket,
   '{': TokenType.lCurly,
@@ -26,6 +29,7 @@ final Map<Pattern, TokenType> _patterns = {
   '(': TokenType.lParen,
   ')': TokenType.rParen,
   ';': TokenType.semi,
+  '/': TokenType.slash,
 
   // Keywords
   'as': TokenType.$as,

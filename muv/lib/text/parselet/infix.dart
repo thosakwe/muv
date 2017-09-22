@@ -3,13 +3,36 @@ part of muv.src.text.parselet;
 const Map<TokenType, InfixParselet> infixParselets = const {
   TokenType.lParen: const CallParselet(),
   TokenType.dot: const MemberParselet(),
+  TokenType.asterisk: const BinaryParselet(14),
+  TokenType.slash: const BinaryParselet(14),
+  TokenType.percent: const BinaryParselet(14),
+  TokenType.plus: const BinaryParselet(13),
+  TokenType.minus: const BinaryParselet(13),
 };
+
+class BinaryParselet implements InfixParselet {
+  final int precedence;
+
+  const BinaryParselet(this.precedence);
+
+  @override
+  Expression parse(Parser parser, Expression left, Token token) {
+    var right = parser.parseExpression(precedence);
+
+    if (right == null) {
+      parser.errors.add(new MuvError(MuvErrorSeverity.ERROR, 'Missing expression after operator "".', token.span));
+      return null;
+    }
+
+    return new BinaryExpression(left, token, right);
+  }
+}
 
 class CallParselet implements InfixParselet {
   const CallParselet();
 
   @override
-  int get precedence => 2;
+  int get precedence => 19;
 
   @override
   Expression parse(Parser parser, Expression left, Token token) {
@@ -39,7 +62,7 @@ class MemberParselet implements InfixParselet {
   const MemberParselet();
 
   @override
-  int get precedence => 2;
+  int get precedence => 19;
 
   @override
   Expression parse(Parser parser, Expression left, Token token) {

@@ -241,6 +241,9 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
       return '';
     }
 
+    if (expression is BinaryExpression)
+      return compileBinaryExpression(expression, ctx, scope, buf);
+
     // Fallback to error
     var msg =
         'Cannot yet compile ${expression.runtimeType} "${expression.span.text}"';
@@ -379,5 +382,12 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
       b.copyInto(buf);
       return blockFunction.name.name;
     }
+  }
+
+  String compileBinaryExpression(BinaryExpression binaryExpression, MuvCompilationContext ctx,
+      SymbolTable<MuvObject> scope, CodeBuffer buf) {
+    var right = compileExpression(binaryExpression.right, ctx, scope, buf);
+    var left = compileExpression(binaryExpression.left, ctx, scope, buf);
+    return '($left) ${binaryExpression.operator.span.text} ($right)';
   }
 }

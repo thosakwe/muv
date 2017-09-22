@@ -1,5 +1,6 @@
 export 'array.dart';
 export 'ast_node.dart';
+export 'binary.dart';
 export 'call.dart';
 export 'export.dart';
 export 'expression.dart';
