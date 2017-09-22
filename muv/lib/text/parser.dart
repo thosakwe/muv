@@ -53,9 +53,9 @@ class Parser {
     while (_index < scanner.tokens.length) {
       if (topLevel != null)
         topLevelDeclarations.add(topLevel);
-      else {
+      else if (_index < scanner.tokens.length && scanner.tokens.isNotEmpty) {
         var token = scanner.tokens[_index++];
-        if (token.type != TokenType.semi) {
+        if (token.type != TokenType.semi && token.type != TokenType.rCurly) {
           errors.add(new MuvError(
               MuvErrorSeverity.WARNING,
               'Extraneous token "${token.span
@@ -71,7 +71,75 @@ class Parser {
   }
 
   // TODO: Imports, etc.
-  TopLevel parseTopLevel() => parseTopLevelStatement();
+  TopLevel parseTopLevel() =>
+      parseImportStatement() ?? parseTopLevelStatement();
+
+  ImportDeclaration parseImportStatement() {
+    if (!next(TokenType.$import)) return null;
+    var $import = _current;
+    var sources = <ImportSource>[];
+    var source = parseImportSource();
+
+    while (source != null) {
+      sources.add(source);
+      if (!next(TokenType.comma)) break;
+      skipExtraneous(TokenType.comma);
+      source = parseImportSource();
+    }
+    if (sources.isNotEmpty && !next(TokenType.from)) {
+      var lastSpan = sources.last.span;
+
+      errors.add(new MuvError(MuvErrorSeverity.ERROR,
+          'Expected "from" after "${lastSpan.text}".', lastSpan));
+      return null;
+    }
+
+    if (!next(TokenType.string)) {
+      errors.add(new MuvError(MuvErrorSeverity.ERROR,
+          'Expected string in import declaration.', source.span));
+      return null;
+    }
+
+    var string =
+        new StringLiteral(_current, StringLiteral.parseValue(_current));
+    var semi = maybe(TokenType.semi);
+    skipExtraneous(TokenType.semi);
+    return new ImportDeclaration($import, sources, _current, string, semi);
+  }
+
+  ImportSource parseImportSource() {
+    var target = parseImportTarget();
+    if (target == null) return null;
+
+    Token $as;
+    Identifier alias;
+
+    if (next(TokenType.$as)) {
+      $as = _current;
+
+      if ((alias = parseIdentifier()) == null) {
+        errors.add(new MuvError(MuvErrorSeverity.ERROR,
+            'Expected identifier after "as".', $as.span));
+        return null;
+      }
+    }
+
+    return new ImportSource(target, $as, alias);
+  }
+
+  ImportTarget parseImportTarget() {
+    if (next(TokenType.asterisk)) {
+      return new NamespacedImportTarget(_current);
+    }
+
+    var dp = parseDestructuringParameter();
+    if (dp != null) return new DestructuringImportTarget(dp);
+
+    var id = parseIdentifier();
+    if (id != null) return new DefaultImportTarget(id);
+
+    return null;
+  }
 
   TopLevelStatement parseTopLevelStatement() {
     var statement = parseStatement();
@@ -80,7 +148,9 @@ class Parser {
 
   // TODO: Other statements
   Statement parseStatement() =>
-      parseVariableDeclarationStatement() ?? parseExpressionStatement();
+      parseVariableDeclarationStatement() ??
+      parseDestructuringAssignmentStatement() ??
+      parseExpressionStatement();
 
   VariableDeclarationStatement parseVariableDeclarationStatement() {
     Token $const, let;
@@ -90,6 +160,12 @@ class Parser {
       let = _current;
     else
       return null;
+
+    if (next(TokenType.lCurly)) {
+      // Backtrack, return null
+      _index -= 2;
+      return null;
+    }
 
     var variableDeclarations = <VariableDeclaration>[];
     var variableDeclaration = parseVariableDeclaration();
@@ -106,6 +182,45 @@ class Parser {
 
     return new VariableDeclarationStatement(
         $const, let, variableDeclarations, semi);
+  }
+
+  DestructuringAssignmentStatement parseDestructuringAssignmentStatement() {
+    Token $const, let;
+    if (next(TokenType.$const))
+      $const = _current;
+    else if (next(TokenType.let))
+      let = _current;
+    else
+      return null;
+
+    var keyword = $const ?? let;
+    var destructuringParameter = parseDestructuringParameter();
+    if (destructuringParameter == null) {
+      var msg =
+          'Expected identifier or destructure after "${keyword.span.text}.';
+      errors.add(new MuvError(MuvErrorSeverity.ERROR, msg, keyword.span));
+      return null;
+    }
+
+    if (!next(TokenType.equals)) {
+      errors.add(new MuvError(MuvErrorSeverity.ERROR,
+          'Missing "=" in assignment.', destructuringParameter.span));
+      return null;
+    }
+
+    var equals = _current;
+    var expression = parseExpression(0);
+
+    if (expression == null) {
+      errors.add(new MuvError(MuvErrorSeverity.ERROR,
+          'Missing expression in assignment.', equals.span));
+      return null;
+    }
+
+    var semi = maybe(TokenType.semi);
+    skipExtraneous(TokenType.semi);
+    return new DestructuringAssignmentStatement(
+        $const, let, destructuringParameter, equals, expression, semi);
   }
 
   VariableDeclaration parseVariableDeclaration() {
@@ -219,6 +334,9 @@ class Parser {
     var name = parseIdentifier();
     return name != null ? new SimpleType(name) : null;
   }
+
+  ArrayLiteralMember parseArrayLiteralMember() =>
+      parseDestructuringMember() ?? parseExpression(0);
 
   ObjectLiteralMember parseObjectLiteralMember() =>
       parseDestructuringMember() ?? parseKeyValuePair();

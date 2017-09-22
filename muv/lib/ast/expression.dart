@@ -1,6 +1,6 @@
-import 'ast_node.dart';
+import 'object.dart';
 
-abstract class Expression extends AstNode {}
+abstract class Expression extends ArrayLiteralMember {}
 
 abstract class Literal extends Expression {
   get value;

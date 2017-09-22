@@ -1,0 +1,14 @@
+// Import a package into the global scope
+import 'babel-polyfill';
+
+// Import the default export, and assign it to a constant
+import Promise from 'bluebird';
+
+// Import members by name only
+import {combineReducers} from 'redux';
+
+// Import all members of a package under a namespace
+import * as _ from 'underscore';
+
+// Multiple import configurations from the same source
+import {Link, Redirect}, * as ReactRouter from 'react-router';

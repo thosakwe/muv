@@ -24,6 +24,7 @@ class ParameterList extends AstNode {
 
 abstract class Parameter extends AstNode {}
 
+// TODO: Add `as` to alias a parameter
 class SimpleParameter extends Parameter {
   final Identifier name;
   final Token colon;

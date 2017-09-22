@@ -13,11 +13,15 @@ final RegExp _string2 = new RegExp(
 final Map<Pattern, TokenType> _patterns = {
   // Symbols
   '=>': TokenType.arrow,
+  'as': TokenType.$as,
+  '*': TokenType.asterisk,
   ':': TokenType.colon,
   ',': TokenType.comma,
   '.': TokenType.dot,
   '...': TokenType.ellipsis,
   '=': TokenType.equals,
+  'from': TokenType.from,
+  'import': TokenType.$import,
   '[': TokenType.lBracket,
   ']': TokenType.rBracket,
   '{': TokenType.lCurly,

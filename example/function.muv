@@ -1,3 +1,9 @@
+function myFunction(x:number) {
+  console.info(x);
+}
+
+myFunction(2.0);
+
 // Destructuring parameters!!!
 function printTodo({text:string, completed:boolean}):void {
   console.log(text, ":", completed);

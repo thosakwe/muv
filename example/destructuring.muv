@@ -1,0 +1,10 @@
+// Imports support destructuring
+import {a, b} from 'my-package';
+
+// ES6 Destructuring Assignments...
+const {title:string, document} = window;
+
+// Destructuring parameters
+function myComponent({title, icon}) {
+    // This might be a React component...
+}

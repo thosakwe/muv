@@ -1,10 +1,11 @@
 import 'package:source_span/source_span.dart';
 import 'expression.dart';
+import 'object.dart';
 import 'token.dart';
 
 class Array extends Expression {
   final Token lBracket, rBracket;
-  final List<Expression> items;
+  final List<ArrayLiteralMember> items;
 
   Array(this.lBracket, this.rBracket, this.items);
 

@@ -5,6 +5,7 @@ export 'expression.dart';
 export 'expression_statement.dart';
 export 'function.dart';
 export 'identifier.dart';
+export 'import.dart';
 export 'member.dart';
 export 'number.dart';
 export 'object.dart';

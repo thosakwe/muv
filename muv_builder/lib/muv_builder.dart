@@ -5,8 +5,11 @@ import 'src/filesystem.dart';
 
 class MuvJavaScriptBuilder implements Builder {
   final String generatedExtension;
+  final MuvOptions buildOptions;
 
-  const MuvJavaScriptBuilder({this.generatedExtension: '.js'});
+  const MuvJavaScriptBuilder(
+      {this.generatedExtension: '.js',
+      this.buildOptions: MuvOptions.defaultOptions});
 
   String _stripFirst(Uri uri) {
     return uri.pathSegments.length == 1
@@ -32,6 +35,7 @@ class MuvJavaScriptBuilder implements Builder {
       fs,
       () => new MuvJavaScriptCompiler(),
       print,
+      buildOptions: buildOptions,
     );
 
     var mapExtension =

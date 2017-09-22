@@ -16,8 +16,71 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
       ..writeln('// Generated via Muv')
       ..writeln('((function() {')
       ..indent();
+
+    if (ctx.options.devMode) {
+      var imports =
+          program.topLevelDeclarations.where((t) => t is ImportDeclaration);
+      var afterRequire = new CodeBuffer();
+      var i = 0;
+
+      buf.write('requirejs([');
+
+      for (ImportDeclaration decl in imports) {
+        var depName = '_require$i';
+        if (i++ > 0) buf.write(', ');
+        buf.write(decl.string.span.text);
+
+        for (var source in decl.sources) {
+          var target = source.target;
+
+          if (target is NamespacedImportTarget) {
+            if (source.alias == null) {
+              errors.add(new MuvError(
+                  MuvErrorSeverity.WARNING,
+                  'No alias provided for namespaced import. It will be ignored.',
+                  decl.span));
+            } else {
+              var name = source.alias.name;
+              afterRequire.writeln('var $name = $depName;');
+            }
+          }
+
+          if (target is DefaultImportTarget) {
+            var name = source.alias?.name ?? target.identifier.name;
+            afterRequire.writeln('var $name = $depName.default || $depName;');
+          }
+
+          if (target is DestructuringImportTarget) {
+            for (var property in target.destructuringParameter.properties) {
+              // TODO: Check for property alias
+              var name = property.name.name;
+              afterRequire
+                  .writeln('var $name = $depName.${property.name.name};');
+            }
+          }
+        }
+      }
+
+      buf.write('], function(');
+
+      for (int j = 0; j < i; j++) {
+        if (j > 0) buf.write(', ');
+        buf.write('_require$j');
+      }
+
+      buf.writeln(') {');
+      buf.indent();
+      afterRequire.copyInto(buf);
+    }
+
     program.topLevelDeclarations
         .forEach((decl) => compileTopLevel(decl, ctx, scope, buf));
+
+    if (ctx.options.devMode) {
+      buf.outdent();
+      buf.writeln('});');
+    }
+
     buf
       ..outdent()
       ..writeln('})());');
@@ -42,6 +105,9 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
     if (statement is VariableDeclarationStatement)
       compileVariableDeclarationStatement(statement, ctx, scope, buf);
 
+    if (statement is DestructuringAssignmentStatement)
+      compileDestructuringAssignmentStatement(statement, ctx, scope, buf);
+
     if (statement is ExpressionStatement)
       compileExpressionStatement(statement, ctx, scope, buf);
   }
@@ -57,6 +123,31 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
       var expr = compileExpression(decl.expression, ctx, scope, buf);
       buf.writeln('var ${decl.name.name} = $expr;');
       //ctx.sourceMapBuilder.addSpan(decl.span, buf.lastLine.span);
+    }
+  }
+
+  void compileDestructuringAssignmentStatement(
+      DestructuringAssignmentStatement statement,
+      MuvCompilationContext ctx,
+      SymbolTable<MuvObject> scope,
+      CodeBuffer buf) {
+    String tempName = '_destruct0',
+        tempValue = compileExpression(statement.expression, ctx, scope, buf);
+    int i = 0;
+    Variable existing = scope.resolve(tempName);
+
+    while (existing != null) {
+      tempName = '_destruct${++i}';
+      existing = scope.resolve(tempName);
+    }
+
+    // TODO: Define a value here...
+    scope.add(tempName);
+    buf.writeln('var $tempName = $tempValue;');
+
+    for (var property in statement.destructuringParameter.properties) {
+      var name = property.name.name;
+      buf.writeln('var $name = $tempName.$name;');
     }
   }
 
@@ -162,8 +253,23 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
 
   String compileArray(Array array, MuvCompilationContext ctx,
       SymbolTable<MuvObject> scope, CodeBuffer buf) {
-    var items = array.items.map((a) => compileExpression(a, ctx, scope, buf));
-    return '[' + items.join(', ') + ']';
+    if (array.items.isEmpty) return '[]';
+
+    if (array.items.every((i) => i is Expression)) {
+      var items = array.items.map((a) => compileExpression(a, ctx, scope, buf));
+      return '[' + items.join(', ') + ']';
+    }
+
+    var items = array.items.map<String>((item) {
+      Expression e;
+      if (item is Expression)
+        e = item;
+      else if (item is DestructuringMember) e = item.expression;
+      return compileExpression(e, ctx, scope, buf);
+    });
+
+    var paren = items.map<String>((e) => '($e)');
+    return paren.reduce((a, b) => '$a.concat($b)');
   }
 
   compileBlockFunction(BlockFunction blockFunction, MuvCompilationContext ctx,

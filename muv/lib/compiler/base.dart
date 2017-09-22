@@ -3,6 +3,7 @@ import 'package:symbol_table/symbol_table.dart';
 import '../analysis/analysis.dart';
 import '../ast/ast.dart';
 import '../text/text.dart';
+import '../options.dart';
 
 abstract class MuvCompiler<T> {
   final List<MuvError> errors = [];
@@ -14,6 +15,8 @@ abstract class MuvCompiler<T> {
 class MuvCompilationContext {
   final SourceMapBuilder sourceMapBuilder = new SourceMapBuilder();
   final Uri entryPoint;
+  final MuvOptions options;
 
-  MuvCompilationContext(this.entryPoint);
+  MuvCompilationContext(this.entryPoint,
+      {this.options: MuvOptions.defaultOptions});
 }

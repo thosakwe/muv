@@ -2,6 +2,7 @@ import 'package:source_span/source_span.dart';
 import 'ast_node.dart';
 import 'expression.dart';
 import 'identifier.dart';
+import 'parameter.dart';
 import 'statement.dart';
 import 'token.dart';
 
@@ -43,5 +44,33 @@ class VariableDeclaration extends AstNode {
   FileSpan get span {
     if (equals == null) return name.span;
     return name.span.expand(equals.span).expand(expression.span);
+  }
+}
+
+class DestructuringAssignmentStatement extends Statement {
+  final Token $const, let, equals, semi;
+  final DestructuringParameter destructuringParameter;
+  final Expression expression;
+
+  DestructuringAssignmentStatement(this.$const, this.let,
+      this.destructuringParameter, this.equals, this.expression, this.semi);
+
+  @override
+  List<String> get comments => keyword.comments;
+
+  bool get isConst => $const != null;
+
+  bool get isLet => let != null;
+
+  Token get keyword => $const ?? let;
+
+  @override
+  FileSpan get span {
+    var s = keyword.span
+        .expand(equals.span)
+        .expand(destructuringParameter.span)
+        .expand(equals.span)
+        .expand(expression.span);
+    return semi == null ? s : s.expand(semi.span);
   }
 }

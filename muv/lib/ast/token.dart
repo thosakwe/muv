@@ -3,11 +3,14 @@ import 'package:source_span/source_span.dart';
 enum TokenType {
   // Symbols
   arrow,
+  $as,
+  asterisk,
   colon,
   comma,
   dot,
   ellipsis,
   equals,
+  from,
   semi,
   lBracket,
   rBracket,
@@ -20,6 +23,7 @@ enum TokenType {
   $class,
   $const,
   function,
+  $import,
   let,
   $return,
 

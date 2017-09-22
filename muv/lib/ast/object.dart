@@ -21,6 +21,8 @@ class ObjectLiteral extends Expression {
   }
 }
 
+abstract class ArrayLiteralMember extends AstNode {}
+
 abstract class ObjectLiteralMember extends AstNode {}
 
 class KeyValuePair extends ObjectLiteralMember {
@@ -40,7 +42,7 @@ class KeyValuePair extends ObjectLiteralMember {
   }
 }
 
-class DestructuringMember extends ObjectLiteralMember {
+class DestructuringMember implements ArrayLiteralMember, ObjectLiteralMember {
   final Token ellipsis;
   final Expression expression;
 

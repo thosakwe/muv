@@ -37,14 +37,14 @@ class ArrayParselet implements PrefixParselet {
 
   @override
   Expression parse(Parser parser, Token token) {
-    List<Expression> items = [];
-    Expression item = parser.parseExpression(0);
+    List<ArrayLiteralMember> items = [];
+    ArrayLiteralMember item = parser.parseArrayLiteralMember();
 
     while (item != null) {
       items.add(item);
       if (!parser.next(TokenType.comma)) break;
       parser.skipExtraneous(TokenType.comma);
-      item = parser.parseExpression(0);
+      item = parser.parseArrayLiteralMember();
     }
 
     if (!parser.next(TokenType.rBracket)) {

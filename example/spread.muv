@@ -1,0 +1,8 @@
+const numbers = {one: 1, two: 2};
+const letters = ['a', 'b'];
+
+// ES6 Object spread...
+const moreNumbers = {...numbers, three: 3};
+
+// ES6 Array spread...
+const moreLetters = [...letters, 'c'];
