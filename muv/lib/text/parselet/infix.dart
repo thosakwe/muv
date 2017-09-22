@@ -3,11 +3,25 @@ part of muv.src.text.parselet;
 const Map<TokenType, InfixParselet> infixParselets = const {
   TokenType.lParen: const CallParselet(),
   TokenType.dot: const MemberParselet(),
+  TokenType.double_asterisk: const BinaryParselet(15),
   TokenType.asterisk: const BinaryParselet(14),
   TokenType.slash: const BinaryParselet(14),
   TokenType.percent: const BinaryParselet(14),
   TokenType.plus: const BinaryParselet(13),
   TokenType.minus: const BinaryParselet(13),
+  TokenType.equals: const BinaryParselet(3),
+  TokenType.plus_equals: const BinaryParselet(3),
+  TokenType.minus_equals: const BinaryParselet(3),
+  TokenType.double_asterisk_equals: const BinaryParselet(3),
+  TokenType.asterisk_equals: const BinaryParselet(3),
+  TokenType.slash_equals: const BinaryParselet(3),
+  TokenType.percent_equals: const BinaryParselet(3),
+  TokenType.shl_equals: const BinaryParselet(3),
+  TokenType.shr_equals: const BinaryParselet(3),
+  TokenType.triple_gt_equals: const BinaryParselet(3),
+  TokenType.ampersand_equals: const BinaryParselet(3),
+  TokenType.caret_equals: const BinaryParselet(3),
+  TokenType.pipe_equals: const BinaryParselet(3),
 };
 
 class BinaryParselet implements InfixParselet {

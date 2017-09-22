@@ -9,6 +9,7 @@ export 'function.dart';
 export 'identifier.dart';
 export 'import.dart';
 export 'member.dart';
+export 'new.dart';
 export 'number.dart';
 export 'object.dart';
 export 'parameter.dart';

@@ -241,6 +241,9 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
       return '';
     }
 
+    if (expression is NewExpression)
+      return compileNewExpression(expression, ctx, scope, buf);
+
     if (expression is BinaryExpression)
       return compileBinaryExpression(expression, ctx, scope, buf);
 
@@ -382,6 +385,12 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
       b.copyInto(buf);
       return blockFunction.name.name;
     }
+  }
+
+  String compileNewExpression(NewExpression newExpression, MuvCompilationContext ctx,
+      SymbolTable<MuvObject> scope, CodeBuffer buf) {
+    var call = compileExpression(newExpression.call, ctx, scope, buf);
+    return 'new $call';
   }
 
   String compileBinaryExpression(BinaryExpression binaryExpression, MuvCompilationContext ctx,

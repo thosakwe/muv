@@ -17,6 +17,10 @@
       <excludeFolder url="file://$MODULE_DIR$/muv_compiler/.pub" />
       <excludeFolder url="file://$MODULE_DIR$/muv_compiler/build" />
     </content>
+    <content url="file://$MODULE_DIR$/../../Games/liberate_em_all">
+      <excludeFolder url="file://$MODULE_DIR$/../../Games/liberate_em_all/.pub" />
+      <excludeFolder url="file://$MODULE_DIR$/../../Games/liberate_em_all/build" />
+    </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Dart SDK" level="project" />

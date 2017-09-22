@@ -1,6 +1,7 @@
 part of muv.src.text.parselet;
 
 const Map<TokenType, PrefixParselet> prefixParselets = const {
+  TokenType.$new: const NewParselet(),
   TokenType.function: const BlockFunctionParselet(),
   TokenType.number: const NumberParselet(),
   TokenType.hex: const HexParselet(),
@@ -9,6 +10,31 @@ const Map<TokenType, PrefixParselet> prefixParselets = const {
   TokenType.lBracket: const ArrayParselet(),
   TokenType.id: const IdentifierParselet(),
 };
+
+class NewParselet implements PrefixParselet {
+  const NewParselet();
+
+  @override
+  Expression parse(Parser parser, Token token) {
+    var call = parser.parseExpression(0);
+
+    if (call == null) {
+      parser.errors.add(new MuvError(
+          MuvErrorSeverity.ERROR,
+          '"new" must precede a call expression. Nothing was found.',
+          call.span));
+      return null;
+    } else if (call is! Call) {
+      parser.errors.add(new MuvError(
+          MuvErrorSeverity.ERROR,
+          '"new" must precede a call expression, not a(n) ${call.runtimeType}.',
+          call.span));
+      return null;
+    } else {
+      return new NewExpression(token, call);
+    }
+  }
+}
 
 class NumberParselet implements PrefixParselet {
   const NumberParselet();
@@ -76,7 +102,8 @@ class ObjectParselet implements PrefixParselet {
 
     if (!parser.next(TokenType.rCurly)) {
       var lastSpan = members.isEmpty ? token.span : members.last.span;
-      parser.errors.add(new MuvError(MuvErrorSeverity.ERROR, 'Missing "}" in object literal.', lastSpan));
+      parser.errors.add(new MuvError(
+          MuvErrorSeverity.ERROR, 'Missing "}" in object literal.', lastSpan));
       return null;
     }
 
@@ -101,8 +128,10 @@ class BlockFunctionParselet implements PrefixParselet {
 
     if (parameterList == null) {
       var functionName = name == null ? 'function' : 'function "${name.name}"';
-      parser.errors.add(new MuvError(MuvErrorSeverity.ERROR,
-          'Missing parameter list in $functionName.', name?.span ?? token.span));
+      parser.errors.add(new MuvError(
+          MuvErrorSeverity.ERROR,
+          'Missing parameter list in $functionName.',
+          name?.span ?? token.span));
       return null;
     }
 

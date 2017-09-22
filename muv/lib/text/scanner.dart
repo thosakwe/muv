@@ -31,6 +31,31 @@ final Map<Pattern, TokenType> _patterns = {
   ';': TokenType.semi,
   '/': TokenType.slash,
 
+  // Operators
+  '**': TokenType.double_asterisk,
+  '<<': TokenType.shl,
+  '>>': TokenType.shr,
+  '<': TokenType.lt,
+  '<=': TokenType.lte,
+  '>': TokenType.gt,
+  '>=': TokenType.gte,
+  '==': TokenType.double_equals,
+  '||': TokenType.double_pipe,
+  '&&': TokenType.double_ampersand,
+
+  '+=': TokenType.plus_equals,
+  '-=': TokenType.minus_equals,
+  '**=': TokenType.double_asterisk_equals,
+  '*=': TokenType.asterisk_equals,
+  '/=': TokenType.slash_equals,
+  '%=': TokenType.percent_equals,
+  '<<=': TokenType.shl_equals,
+  '>>=': TokenType.shr_equals,
+  '>>>=': TokenType.triple_gt_equals,
+  '&=': TokenType.ampersand_equals,
+  '^=': TokenType.caret_equals,
+  '|=': TokenType.pipe_equals,
+
   // Keywords
   'as': TokenType.$as,
   'class': TokenType.$class,
@@ -41,6 +66,7 @@ final Map<Pattern, TokenType> _patterns = {
   'function': TokenType.function,
   'import': TokenType.$import,
   'let': TokenType.let,
+  'new': TokenType.$new,
   'return': TokenType.$return,
   'var': TokenType.$var,
 
