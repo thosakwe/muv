@@ -8,11 +8,12 @@ main(List<String> args) async {
   var buildActions = [
     // TODO: Package name...?
     new BuildAction(
-        new MuvJavaScriptBuilder(
-          buildOptions: new MuvOptions.fromArgResults(results),
-        ),
-        'muv',
-        inputs: inputs),
+      new MuvJavaScriptBuilder(
+        buildOptions: new MuvOptions.fromArgResults(results),
+      ),
+      'muv',
+      inputs: inputs,
+    ),
   ];
 
   if (results['watch'])

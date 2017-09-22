@@ -10,6 +10,5 @@ final List<BuildAction> buildActions = [
       ),
     ),
     'example',
-    inputs: const ['*.muv'],
   ),
 ];

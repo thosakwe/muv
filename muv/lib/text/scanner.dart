@@ -13,15 +13,12 @@ final RegExp _string2 = new RegExp(
 final Map<Pattern, TokenType> _patterns = {
   // Symbols
   '=>': TokenType.arrow,
-  'as': TokenType.$as,
   '*': TokenType.asterisk,
   ':': TokenType.colon,
   ',': TokenType.comma,
   '.': TokenType.dot,
   '...': TokenType.ellipsis,
   '=': TokenType.equals,
-  'from': TokenType.from,
-  'import': TokenType.$import,
   '[': TokenType.lBracket,
   ']': TokenType.rBracket,
   '{': TokenType.lCurly,
@@ -31,11 +28,17 @@ final Map<Pattern, TokenType> _patterns = {
   ';': TokenType.semi,
 
   // Keywords
+  'as': TokenType.$as,
   'class': TokenType.$class,
   'const': TokenType.$const,
+  'default': TokenType.$default,
+  'export': TokenType.$export,
+  'from': TokenType.from,
   'function': TokenType.function,
+  'import': TokenType.$import,
   'let': TokenType.let,
   'return': TokenType.$return,
+  'var': TokenType.$var,
 
   // Expressions
   new RegExp(r'-?[0-9]+(\.[0-9]+)?([Ee][0-9]+)?'): TokenType.number,

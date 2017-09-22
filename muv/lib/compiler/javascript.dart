@@ -23,11 +23,11 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
       var afterRequire = new CodeBuffer();
       var i = 0;
 
-      buf.write('requirejs([');
+      buf.write('define(["require"');
 
       for (ImportDeclaration decl in imports) {
-        var depName = '_require$i';
-        if (i++ > 0) buf.write(', ');
+        var depName = '_require${i++}';
+        buf.write(', ');
         buf.write(decl.string.span.text);
 
         for (var source in decl.sources) {
@@ -61,11 +61,10 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
         }
       }
 
-      buf.write('], function(');
+      buf.write('], function(require');
 
       for (int j = 0; j < i; j++) {
-        if (j > 0) buf.write(', ');
-        buf.write('_require$j');
+        buf.write(', _require$j');
       }
 
       buf.writeln(') {');
@@ -75,6 +74,58 @@ class MuvJavaScriptCompiler extends MuvCompiler<String> {
 
     program.topLevelDeclarations
         .forEach((decl) => compileTopLevel(decl, ctx, scope, buf));
+
+    // Compute exports...
+    if (ctx.options.devMode) {
+      var exports = {};
+
+      for (var decl in program.topLevelDeclarations) {
+        if (decl is DefaultExportDeclaration) {
+          exports['default'] =
+              compileExpression(decl.expression, ctx, scope, buf);
+        } else if (decl is NamedExportDeclaration) {
+          if (decl.variableDeclarationStatement.isVar) {
+            errors.add(new MuvError(
+                MuvErrorSeverity.WARNING,
+                'Exports must use "const" or "let". This export will be ignored, as it uses "var".',
+                decl.variableDeclarationStatement.$var.span));
+          } else {
+            for (var varDecl
+                in decl.variableDeclarationStatement.variableDeclarations) {
+              exports[varDecl.name.name] =
+                  compileExpression(varDecl.expression, ctx, scope, buf);
+            }
+          }
+        } else if (decl is FunctionExportDeclaration) {
+          if (decl.blockFunction.name == null) {
+            errors.add(new MuvError(
+                MuvErrorSeverity.WARNING,
+                'This function has no name. It will not be exported.',
+                decl.blockFunction.span));
+          } else {
+            exports[decl.blockFunction.name.name] =
+                compileExpression(decl.blockFunction, ctx, scope, buf);
+          }
+        }
+      }
+
+      if (exports.isNotEmpty) {
+        int i = 0;
+        buf
+          ..writeln('return {')
+          ..indent();
+
+        exports.forEach((key, val) {
+          if (i++ > 0) buf.writeln(',');
+          buf.write('$key: $val');
+        });
+
+        buf
+          ..writeln()
+          ..outdent()
+          ..writeln('};');
+      }
+    }
 
     if (ctx.options.devMode) {
       buf.outdent();

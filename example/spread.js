@@ -1,6 +1,6 @@
 // Generated via Muv
 ((function() {
-  requirejs([], function() {
+  define(["require"], function(require) {
     var numbers = {one: 1, two: 2};
     var letters = ['a', 'b'];
     var moreNumbers = Object.assign({}, numbers, {three: 3});

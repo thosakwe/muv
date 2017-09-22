@@ -7,9 +7,11 @@ enum TokenType {
   asterisk,
   colon,
   comma,
+  $default,
   dot,
   ellipsis,
   equals,
+  $export,
   from,
   semi,
   lBracket,
@@ -26,6 +28,7 @@ enum TokenType {
   $import,
   let,
   $return,
+  $var,
 
   // Expressions
   number,

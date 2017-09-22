@@ -1,6 +1,6 @@
 // Generated via Muv
 ((function() {
-  requirejs([], function() {
+  define(["require"], function(require) {
     function myFunction(x) {
       console.info(x);
     }

@@ -1,3 +1,5 @@
-function printIt(x) {
+export default function printIt(x) {
   console.info('Yay!', x);
 }
+
+export const one = 1.0;

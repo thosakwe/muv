@@ -5,6 +5,6 @@ import {a, b} from 'my-package';
 const {title:string, document} = window;
 
 // Destructuring parameters
-function myComponent({title, icon}) {
+export function myComponent({title, icon}) {
     // This might be a React component...
 }

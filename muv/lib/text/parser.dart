@@ -72,7 +72,11 @@ class Parser {
 
   // TODO: Imports, etc.
   TopLevel parseTopLevel() =>
-      parseImportStatement() ?? parseTopLevelStatement();
+      parseImportStatement() ??
+      parseDefaultExportDeclaration() ??
+      parseNamedExportDeclaration() ??
+      parseFunctionExportDeclaration() ??
+      parseTopLevelStatement();
 
   ImportDeclaration parseImportStatement() {
     if (!next(TokenType.$import)) return null;
@@ -141,6 +145,59 @@ class Parser {
     return null;
   }
 
+  DefaultExportDeclaration parseDefaultExportDeclaration() {
+    if (next(TokenType.$export)) {
+      var $export = _current;
+
+      if (!next(TokenType.$default)) {
+        _index--;
+        return null;
+      }
+
+      var $default = _current;
+      var expression = parseExpression(0);
+
+      if (expression == null) {
+        errors.add(new MuvError(
+            MuvErrorSeverity.ERROR,
+            'Missing expression in default export declaration.',
+            $default.span));
+        return null;
+      }
+
+      return new DefaultExportDeclaration($export, $default, expression);
+    } else
+      return null;
+  }
+
+  NamedExportDeclaration parseNamedExportDeclaration() {
+    var backtrack = _index;
+    if (!next(TokenType.$export)) return null;
+    var $export = _current;
+
+    var variableDeclarationStatement = parseVariableDeclarationStatement();
+
+    if (variableDeclarationStatement == null) {
+      _index = backtrack;
+      return null;
+    }
+
+    return new NamedExportDeclaration($export, variableDeclarationStatement);
+  }
+
+  FunctionExportDeclaration parseFunctionExportDeclaration() {
+    if (!next(TokenType.$export)) return null;
+    var $export = _current;
+
+    if (!next(TokenType.function)) {
+      _index--;
+      return null;
+    }
+
+    var blockFunction = const BlockFunctionParselet().parse(this, _current);
+    return new FunctionExportDeclaration($export, blockFunction);
+  }
+
   TopLevelStatement parseTopLevelStatement() {
     var statement = parseStatement();
     return statement != null ? new TopLevelStatement(statement) : null;
@@ -153,11 +210,13 @@ class Parser {
       parseExpressionStatement();
 
   VariableDeclarationStatement parseVariableDeclarationStatement() {
-    Token $const, let;
+    Token $const, let, $var;
     if (next(TokenType.$const))
       $const = _current;
     else if (next(TokenType.let))
       let = _current;
+    else if (next(TokenType.$var))
+      $var = _current;
     else
       return null;
 
@@ -181,7 +240,7 @@ class Parser {
     skipExtraneous(TokenType.semi);
 
     return new VariableDeclarationStatement(
-        $const, let, variableDeclarations, semi);
+        $const, let, $var, variableDeclarations, semi);
   }
 
   DestructuringAssignmentStatement parseDestructuringAssignmentStatement() {
@@ -227,8 +286,21 @@ class Parser {
     var name = parseIdentifier();
     if (name == null) return null;
 
+    Token colon;
+    TypeNode type;
+
+    if (next(TokenType.colon)) {
+      colon = _current;
+
+      if ((type = parseType()) == null) {
+        errors.add(new MuvError(
+            MuvErrorSeverity.ERROR, 'Missing type after ":".', colon.span));
+        return null;
+      }
+    }
+
     if (!next(TokenType.equals))
-      return new VariableDeclaration(name, null, null);
+      return new VariableDeclaration(name, colon, type, null, null);
 
     var equals = _current;
     var expression = parseExpression(0);
@@ -239,7 +311,7 @@ class Parser {
       return null;
     }
 
-    return new VariableDeclaration(name, equals, expression);
+    return new VariableDeclaration(name, colon, type, equals, expression);
   }
 
   ExpressionStatement parseExpressionStatement() {

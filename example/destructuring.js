@@ -1,6 +1,6 @@
 // Generated via Muv
 ((function() {
-  requirejs(['my-package'], function(_require0) {
+  define(["require", 'my-package'], function(require, _require0) {
     var a = _require0.a;
     var b = _require0.b;
     var _destruct0 = window;
@@ -10,6 +10,9 @@
       var title = arg0.title;
       var icon = arg0.icon;
     }
+    return {
+      myComponent: myComponent
+    };
   });
 })());
 //#sourceMappingURL=destructuring.js.map

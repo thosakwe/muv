@@ -1,3 +1,3 @@
-import './require_this';
+import printIt, {one} from './require_this';
 
-printIt('Hello');
+printIt(one);

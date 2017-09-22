@@ -5,19 +5,22 @@ import 'identifier.dart';
 import 'parameter.dart';
 import 'statement.dart';
 import 'token.dart';
+import 'type.dart';
 
 class VariableDeclarationStatement extends Statement {
-  final Token $const, let, semi;
+  final Token $const, let, $var, semi;
   final List<VariableDeclaration> variableDeclarations;
 
   VariableDeclarationStatement(
-      this.$const, this.let, this.variableDeclarations, this.semi);
+      this.$const, this.let, this.$var, this.variableDeclarations, this.semi);
 
   bool get isConst => $const != null;
 
   bool get isLet => let != null;
 
-  Token get keyword => $const ?? let;
+  bool get isVar => $var != null;
+
+  Token get keyword => $const ?? let ?? $var;
 
   @override
   List<String> get comments => keyword.comments;
@@ -32,18 +35,22 @@ class VariableDeclarationStatement extends Statement {
 
 class VariableDeclaration extends AstNode {
   final Identifier name;
-  final Token equals;
+  final Token colon, equals;
+  final TypeNode type;
   final Expression expression;
 
-  VariableDeclaration(this.name, this.equals, this.expression);
+  VariableDeclaration(
+      this.name, this.colon, this.type, this.equals, this.expression);
 
   @override
   List<String> get comments => name.comments;
 
   @override
   FileSpan get span {
-    if (equals == null) return name.span;
-    return name.span.expand(equals.span).expand(expression.span);
+    var left = name.span;
+    if (colon != null) left = left.expand(colon.span).expand(type.span);
+    if (equals == null) return left;
+    return left.expand(equals.span).expand(expression.span);
   }
 }
 
